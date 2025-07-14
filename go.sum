@@ -1,2 +1,4 @@
 github.com/RecursionExcursion/gloader v1.0.0 h1:aO3QyO74091yKt4rGXDyOky/UF3JVJ+YSnubdsMRx5M=
 github.com/RecursionExcursion/gloader v1.0.0/go.mod h1:VCWOhLDbQfr13b34zv1y1l4JXvOmQGwimsj5ZsIg18Y=
+github.com/golang-jwt/jwt/v5 v5.2.2 h1:Rl4B7itRWVtYIHFrSNd7vhTiz9UpLdi6gZhZ3wEeDy8=
+github.com/golang-jwt/jwt/v5 v5.2.2/go.mod h1:pqrtFR0X4osieyHYxtmOUWsAWrfe1Q5UVIyoH402zdk=
