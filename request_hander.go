@@ -18,7 +18,7 @@ func requestHandler(w http.ResponseWriter, r *http.Request) {
 	service, ok := inMemRegistry[h]
 	if !ok {
 		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
-		w.WriteHeader(400)
+		w.WriteHeader(http.StatusBadRequest)
 		w.Write([]byte("Service not registered"))
 		return
 	}
@@ -26,12 +26,9 @@ func requestHandler(w http.ResponseWriter, r *http.Request) {
 	// authorize
 	ok, claims, err := authorizeRequest(r, service)
 	if err != nil || !ok {
-		w.WriteHeader(401)
+		w.WriteHeader(http.StatusUnauthorized)
 		return
 	}
-
-	//TODO need to handle pasing claims as headers
-	fmt.Println(claims)
 
 	//forward to registry
 	serviceRequest, err := http.NewRequest(m, fmt.Sprintf("%v/%v", service.BaseUrl, p), r.Body)
@@ -40,9 +37,16 @@ func requestHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	copyHeaders(r.Header, serviceRequest.Header)
+
+	//pass claims as headers
+	for k, v := range claims {
+		serviceRequest.Header.Add(fmt.Sprintf("X-Claim-%v", k), fmt.Sprint(v))
+	}
+
 	serviceResponse, err := http.DefaultClient.Do(serviceRequest)
 	if err != nil {
-		w.WriteHeader(500)
+		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 	defer serviceResponse.Body.Close()
@@ -53,7 +57,7 @@ func requestHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	//respond to client
-	copyHeaders(w, serviceResponse)
+	copyHeaders(serviceResponse.Header, w.Header())
 	w.WriteHeader(serviceResponse.StatusCode)
 	_, err = io.Copy(w, serviceResponse.Body)
 	if err != nil {
@@ -161,10 +165,10 @@ func removeProxyTokenHeaders(r *http.Response) (headers map[string][]string, ok 
 	return headers, len(headers) > 0
 }
 
-func copyHeaders(w http.ResponseWriter, r *http.Response) {
-	for k, v := range r.Header {
-		for _, vv := range v {
-			w.Header().Add(k, vv)
+func copyHeaders(dst http.Header, src http.Header) {
+	for k, vv := range src {
+		for _, v := range vv {
+			dst.Add(k, v)
 		}
 	}
 }
